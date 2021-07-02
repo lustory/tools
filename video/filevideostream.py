@@ -106,20 +106,20 @@ else:
 
 
 class FileVideoStream:
-	def __init__(self, v_path, skip=None):
+	def __init__(self, v_path):
 		self.v_path = v_path
 		self.cap = cv2.VideoCapture(self.v_path)
 		self.width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)) 
 		self.height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 		self.fps = self.cap.get(cv2.CAP_PROP_FPS)
-		self.cycle_loop = cycle(list(range(skip))) if skip != None else None
 
-	def read(self, max_width=720, quality=None):
-		
+	def read(self, skip=None, max_width=720, quality=None):
+
+		self.cycle_loop = cycle(list(range(skip))) if skip != None else None
 		while self.cap.isOpened():
-			ret, frame = self.cap.read()       
+			ret, frame = self.cap.read()
 			self.frame_skip()
-            
+
 			if not ret:
 				return ret, frame
 			else:     
