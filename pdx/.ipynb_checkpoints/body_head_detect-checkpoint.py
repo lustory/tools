@@ -32,7 +32,8 @@ class BH_detector():
         
         det_results = self.net.predict(image.copy().astype('float32'))
         
-        boxes_and_labels = [ [self.round_list(res['bbox']), res['category_id']]  for res in det_results if res['score'] >= self.confThre ]
+        boxes_and_labels = [ [self.round_list(res['bbox']), res['category_id']]  \
+                             for res in det_results if res['score'] >= self.confThre ]
         
         if len(boxes_and_labels) == 0:
             return config.NO_P_DETECTED, [0,0,0,0], config.NO_P_DETECTED
@@ -74,6 +75,8 @@ class BH_detector():
             for image, single_image_boxes, single_image_labels in zip(image_list, image_boxes, image_labels):
                 if single_image_labels != config.NONE_DETECTED:
                     labels = [ config.LABELS[int(label)] for label in single_image_labels]
+                else:
+                    labels = single_image_labels
                 new_msg = [single_image_boxes, labels]
     #             # new_msg = orjson.dumps(new_msg) 
 
@@ -82,7 +85,10 @@ class BH_detector():
 
                 # 方式2，传送jpg buffer
                 jpg_buffer = simplejpeg.encode_jpeg(image, quality=90, colorspace='BGR', fastdct=False)
-                sender.send_jpg_reqrep(new_msg, jpg_buffer)
+                if is_req_rep:
+                    sender.send_jpg_reqrep(new_msg, jpg_buffer)
+                else:
+                    sender.send_jpg(new_msg, jpg_buffer)
                 
 
     def batch_detect(self, image_list):
@@ -99,6 +105,7 @@ class BH_detector():
             for result in single_image_results:
                 if result["score"] >= self.confThre:
                     temp_boxes.append(self.round_list(result["bbox"]))
+                    # category_id, category
                     temp_labels.append(result["category_id"])
                     
             # 若当前图片没有发现目标
