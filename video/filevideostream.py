@@ -114,8 +114,8 @@ class FileVideoStream:
 		self.fps = self.cap.get(cv2.CAP_PROP_FPS)
 
 	def read(self, skip=None, max_width=720, quality=None):
-
 		self.cycle_loop = cycle(list(range(skip))) if skip != None else None
+        
 		while self.cap.isOpened():
 			ret, frame = self.cap.read()
 			self.frame_skip()

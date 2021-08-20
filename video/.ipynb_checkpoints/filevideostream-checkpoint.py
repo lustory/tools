@@ -112,22 +112,22 @@ class FileVideoStream:
 		self.width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)) 
 		self.height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 		self.fps = self.cap.get(cv2.CAP_PROP_FPS)
-		
 
 	def read(self, skip=None, max_width=720, quality=None):
-        self.cycle_loop = cycle(list(range(skip))) if skip != None else None
-        while self.cap.isOpened():
-            ret, frame = self.cap.read()       
-            self.frame_skip()
 
-            if not ret:
-                return ret, frame
-            else:     
-                if frame.shape[1] >= max_width:
-                    frame = imutils.resize(frame, width=max_width)
-                if quality != None:
-                    frame = self.image_compress(frame, quality)      
-                return ret, frame
+		self.cycle_loop = cycle(list(range(skip))) if skip != None else None
+		while self.cap.isOpened():
+			ret, frame = self.cap.read()
+			self.frame_skip()
+
+			if not ret:
+				return ret, frame
+			else:     
+				if frame.shape[1] >= max_width:
+					frame = imutils.resize(frame, width=max_width)
+				if quality != None:
+					frame = self.image_compress(frame, quality)      
+				return ret, frame
         
 	def frame_skip(self,):
 		if self.cycle_loop != None:
