@@ -12,6 +12,7 @@ import imutils
 import numpy as np
 import itertools 
 import pathlib2 as pathlib
+import time
 
 
 
@@ -24,55 +25,6 @@ import pathlib2 as pathlib
 
 # BGR
 COLORS = {"body":"lime", "head":"red"}
-
-def jcam_show(cam, height=300, width=400):
-    imgbox = widgets.Image(format='jpg', height=height, width=width)
-    display.display(imgbox)
-    
-    while True:
-        image = cam.read()
-        imgbox.value = cv2.imencode(".jpg", image)[1].tobytes()
-        
-        
-class Jimage_show:
-    def __init__(self, height=300, width=400):
-        self.imgbox = widgets.Image(format='jpg', height=height, width=width)
-        display.display(self.imgbox)
-    
-
-    def show(self, image):
-        self.imgbox.value = cv2.imencode(".jpg", image)[1].tobytes()
-    
-
-def buffer2image(image_buffer, colorspace="BGR"):
-    return simplejpeg.decode_jpeg(image_buffer, colorspace=colorspace, fastdct=False, fastupsample=False)
-
-
-
-def camera_shot(prefix="mac",save_image=False):
-    cap = cv2.VideoCapture(0)
-    ret, frame = cap.read()
-    if ret:
-        if save_image:
-            cv2.imwrite(f"./{prefix}_{now()}.jpg", frame)
-    return ret, frame
-
-
-def now():
-    return datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-
-
-def screen_shot(save_dir="./", prefix="454-desktop", save_image=False):
-    try:
-        frame = PIL.ImageGrab.grab(all_screens=True)
-        frame = cv2.cvtColor(np.asarray(frame), cv2.COLOR_RGB2BGR)
-        if save_image:
-            print(f"{os.path.join(save_dir, '_'.join([prefix, now()+'.jpg']) )}")
-            cv2.imwrite(f"{os.path.join(save_dir, '_'.join([prefix, now()+'.jpg']) )}", frame)
-        return True, frame
-    except Exception as e:
-        print(e)
-        return False, False
 
 
 def plot_boxes_on_image(image, boxes, labels=None, box_type="xyxy", line_width=3, box_color="red", textColor="white", line_ratio=0.3):
