@@ -5,7 +5,7 @@ from .VideoStreamSubscriber import VideoStreamSubscriber
 
 
 def receive_msg2queue(input_queue, hostname="192.168.31.100", port=6500, \
-                      is_req_rep=True, timeout=360, dtype="buffer"):
+                      is_req_rep=True, timeout=10*5, dtype="buffer"):
 
     # dtype=image 表示接受numpy格式的image, buffer表示接收jpeg buffer
     receiver = VideoStreamSubscriber(hostname, port, is_req_rep=is_req_rep, dtype=dtype) 
@@ -14,17 +14,14 @@ def receive_msg2queue(input_queue, hostname="192.168.31.100", port=6500, \
     msg_count = count(0)
     while True:
 
-        msg, image = receiver.receive(timeout=timeout)
-        if dtype == "buffer":
-            image = simplejpeg.decode_jpeg(image, colorspace='BGR', fastdct=False, fastupsample=False)
-
-        input_queue.put({"msg":msg, "image":image})
+        _, image = receiver.receive(timeout=timeout)
+        image = simplejpeg.decode_jpeg(image, colorspace='BGR', fastdct=False, fastupsample=False)
+        input_queue.put(image)
 #         print(f"[INFO] msgs received: {next(msg_count):,}, cached in queue: {input_queue.qsize():,}")
         
 
 def send_msg(sender, image, msg="", image_quality=90, image_type="buffer", is_req_rep=True):
     '''
-        发送消息。
         sender: imagezmq.ImageSender。
         msg: 待发送的消息。
         image: 待发送的图片。
@@ -43,8 +40,7 @@ def send_msg(sender, image, msg="", image_quality=90, image_type="buffer", is_re
             sender.send_image(msg, image)
     # 方式2：发送图片jpg buffer
     else: 
-        jpg_buffer = simplejpeg.encode_jpeg(image, quality=image_quality, \
-                                            colorspace='BGR', fastdct=False)
+        jpg_buffer = simplejpeg.encode_jpeg(image, quality=image_quality, colorspace='BGR', fastdct=False)
         if is_req_rep:
             sender.send_jpg_reqrep(msg, jpg_buffer)
         else:

@@ -30,7 +30,7 @@ class webCamVideoStream:
         self.readin_cycle_loop = cycle(list(range(skip_num+1)))
         self.name = name
         self.stopped = False
-        self.imagedeque = Queue(maxsize=maxqsize) 
+        self.imagedeque = Queue() if maxqsize ==0 else Queue(maxsize=maxqsize) 
         self.im_w = im_w
  
     def start(self):
