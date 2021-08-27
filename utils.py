@@ -27,58 +27,6 @@ import time
 COLORS = {"body":"lime", "head":"red"}
 
 
-def plot_boxes_on_image(image, boxes, labels=None, box_type="xyxy", line_width=3, box_color="red", textColor="white", line_ratio=0.3):
-    image_copy = image.copy()
-    if box_type == "xywh":
-        boxes = [xywh2xyxy(i) for i in boxes]
-        
-    if labels != None:
-#         # 设定label和box的对应关系
-#         labels = labels if labels != None else [None]*len(boxes)
-        for index, (box, label) in enumerate(zip(boxes, labels)):
-            image_copy = plot_one_box(image_copy, box, label, line_width=line_width, box_color=box_color if box_color !=None else COLORS[label], textColor=textColor, line_ratio=line_ratio)
-    else:
-        for index, box in enumerate(boxes):
-            image_copy = plot_one_box(image_copy, box, None, line_width=line_width, box_color=box_color if box_color !=None else COLORS[label], textColor=textColor, line_ratio=line_ratio)
-        
-    return image_copy
-            
-
-def plot_one_box(image, box, label=None, line_width=3, box_color="lime", textColor="white", line_ratio=0.3):
-    '''
-        # 使用opencv在image上画出一个box, box=[x,y,x,y]
-    '''
-    # 图像格式转化
-    img = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-    
-
-    ######### 画矩形框 #########
-    draw = ImageDraw.ImageDraw(img)
-    # 矩形框参数计算
-    [x1,y1,x2,y2] = box
-    box_width, box_height = y2-y1, x2-x1
-    
-    
-    # 画矩形框方式1
-#     draw.rectangle(((x1, y1),(x2, y2)), fill=None, outline=box_color, width=line_width)  
-
-    # 画矩形框方式2
-    plot_hollow_box(draw, box, line_ratio=line_ratio, color=box_color, line_width=line_width)
-    
-    ######### 画label #########
-    if label != None:
-        # 将int类型的label转化为字符串
-        label = str(label) if isinstance(label, int) else label
-        # 单个字体大小（字体为正方形，这里的大小指的是其宽或高的像素值）。
-        # 同时限定单个字尺寸最大为20
-        textSize = min(20, int(box_width*3/4/len(label)))
-        fontStyle = ImageFont.truetype("SimHei.ttf", textSize, encoding="utf-8")
-        (text_w, text_h) = draw.textsize(label, fontStyle)
-        new_y1 = y1-text_h - line_width if y1-text_h >=0 else y1 + line_width
-        draw.rectangle(((x1, new_y1),(x1+text_w, new_y1+text_h)), fill="blue", outline=None, width=line_width)  
-        draw.text((x1,new_y1), label, textColor, font=fontStyle)
-        
-    return cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR)
 #     # 线条和字体的宽度
 #     lt = line_thickness or round(0.002 * (image.shape[0] + image.shape[1]) / 2) + 1  # line/font thickness
     
@@ -111,39 +59,8 @@ def plot_one_box(image, box, label=None, line_width=3, box_color="lime", textCol
 # #             cv2.putText(image, label, (x1, y1), 0, lt / 3, [225, 255, 255], thickness=ft, lineType=cv2.LINE_AA)
         
     
-def plot_hollow_box(draw, box, line_ratio=0.3, color="springgreen", line_width=3):
-    '''
-        基于PIL.draw，画出空心box,
-        draw: ImageDraw.ImageDraw
-        box: [x1,y1,x2,y2]
-        line_ratio：实际画出box的长和宽占原本长和宽的比例。
-        color: box颜色
-        line_width: 线段宽度（像素）        
-    '''
-    # 矩形框参数计算
-    [x1,y1,x2,y2] = box
-    box_height, box_width = y2-y1, x2-x1
-    x_extend, y_extend = int(box_width*line_ratio), int(box_height*line_ratio)
-    
-    draw.line((x1,y1, x1+x_extend, y1), color, width=line_width) 
-    draw.line((x1,y1, x1, y1+y_extend), color, width=line_width) 
-    draw.line((x1,y2, x1+x_extend, y2), color, width=line_width) 
-    draw.line((x1,y2, x1, y2-y_extend), color, width=line_width) 
-    draw.line((x2,y1, x2-x_extend, y1), color, width=line_width) 
-    draw.line((x2,y1, x2, y1+y_extend), color, width=line_width) 
-    draw.line((x2,y2, x2-x_extend, y2), color, width=line_width) 
-    draw.line((x2,y2, x2, y2-y_extend), color, width=line_width)      
-    
 
-def xywh2xyxy(box):
-    if isinstance(box[0], int):
-        x,y,w,h = box
-        return [x,y,x+w,y+h]
-    else:
-        temp = []
-        for [x,y,w,h] in box:
-            temp.append([x,y,x+w,y+h])
-        return temp
+
 
 
 def putText(img,text,org,textSize,color):

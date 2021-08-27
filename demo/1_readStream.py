@@ -23,7 +23,7 @@ is_req_rep = True
 remote_addr = "127.0.0.1" 
 input_stream = "/home/xjtu/.research/test.mp4"
 sender = imagezmq.ImageSender(f"tcp://{remote_addr}:{port}")
-print(f"[INFO] starting sending msgs using {'req_rep' if REQ_REP_mode else 'pub_sub'} mode")
+print(f"[INFO] starting sending msgs using {'req_rep' if is_req_rep else 'pub_sub'} mode")
 
 
 webcam = webCamVideoStream(input_stream, skip_num=3, maxqsize=0, im_w=None)

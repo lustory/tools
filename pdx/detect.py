@@ -42,7 +42,7 @@ class DETECT():
             # input_queue.put({"msg":msg, "image":image})
             self.msgqueue.put(image)
             
-    def start_receive(self, hostname="192.168.31.100", port=6500, is_req_rep=True):
+    def start_receive(self, hostname, port, is_req_rep=True):
         receive_msg = functools.partial(self._receive_msgs, hostname=hostname, port=port, is_req_rep=is_req_rep)
         Thread(target=receive_msg, args=()).start()
     
@@ -84,7 +84,7 @@ class DETECT():
         
             for image, result in zip(image_list, image_results):
                 boxes, labels = self.filter_bboxes(result)
-                new_msg = [boxes, labels]
+                new_msg = {"boxes":boxes, "labels":labels}
                 send_msg(sender, image, msg=new_msg, image_quality=90, image_type="buffer", is_req_rep=is_req_rep)
 
                 send_count += 1

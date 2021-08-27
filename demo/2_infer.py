@@ -32,7 +32,7 @@ from video.image_utils import *
 receive_port = 6500
 send_port = 6501
 REQ_REP = True
-hostname = "localhost" 
+hostname = "127.0.0.1" 
 model_path = "/home/xjtu/.research/models/test_model"
 
 
