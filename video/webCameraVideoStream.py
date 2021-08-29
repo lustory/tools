@@ -5,21 +5,24 @@ import time
 import numpy as np
 from itertools import cycle
 from threading import Thread, Event
-# import simplejpeg
-
+import simplejpeg
 from multiprocessing import Queue
 import copy
 import imutils
 
  
 class webCamVideoStream:
-    def __init__(self, video_addr, skip_num=3, retry=10, maxqsize=30, im_w=None, name="webCamera"):
+    def __init__(self, video_addr, skip_num=3, retry=10, maxqsize=30, im_w=None, quality=None,  name="webCamera"):
         '''
             video_addr: 输入视频流地址
             skip_num: 跳帧数量
             retry=10: 视频流无法连接时，最大的重连次数
-            maxqsize: 最大的缓存帧数量，0表示无限大
+            maxqsize: 最大的缓存帧数量，0表示无限大。maxqsize所起作用是
+                      在源头防止因下游处理阻塞导致的帧积压问题，帧积压又会进一步
+                      造成下游的图片流延迟。建议该参数设定后保持默认即可。
+                      但当下游读帧受其他程序阻塞时，
             im_w: 图像宽度，保持长宽比缩放
+            quality: 图片质量。
             name: 进程名
         '''
         
@@ -32,6 +35,7 @@ class webCamVideoStream:
         self.stopped = False
         self.imagedeque = Queue() if maxqsize ==0 else Queue(maxsize=maxqsize) 
         self.im_w = im_w
+        self.quality = quality
  
     def start(self):
         t = Thread(target=self.update, name=self.name, args=())
@@ -45,12 +49,17 @@ class webCamVideoStream:
                 return 
             self.grabbed, self.frame = self.stream.read()
             if not self.grabbed: 
-                self.stream_init()      
+                self.stream_init()     
                 
-            self.skip_frame()
+            if self.quality != None:
+                self.frame = self.image_compress(self.frame, self.quality)
+                
             if (self.im_w != None) and (self.im_w < self.frame.shape[1]):
                 self.frame = imutils.resize(self.frame, width = self.im_w)
+                
             self.imagedeque.put(self.frame)
+            
+            self.skip_frame()
                          
     def skip_frame(self):
         while True:
@@ -70,12 +79,16 @@ class webCamVideoStream:
                 self.grabbed, self.frame = self.stream.read()
                 if not self.grabbed:
                     time.sleep(1)
-                    print(retry)
                     retry -= 1
                     assert retry >= 0, print("The input video stream is not available...")
                 else:
-                    break           
-            
+                    break     
+                    
+    def image_compress(self, image, quality):
+        jpg_buffer = simplejpeg.encode_jpeg(image, quality, colorspace='BGR', fastdct=False)
+        image = simplejpeg.decode_jpeg(jpg_buffer, colorspace='BGR', fastdct=False, fastupsample=False)
+        return image
+    
     def stop(self):
         self.stopped = True
         

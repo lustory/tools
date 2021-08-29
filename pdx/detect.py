@@ -22,11 +22,11 @@ from comm.ImageZMQ.utils import send_msg
 NONE_DETECTED = -1
 
 class DETECT():
-    def __init__(self, model_path="./inference_model", use_gpu=False, inputWdith=512, inputHeight=512, confThre=0.5, maxqsize=0):
+    def __init__(self, model_path="./inference_model", use_gpu=False, confThre=0.5, maxqsize=0):
         self.confThre = confThre
         self.model_path = model_path
         self.use_gpu = use_gpu
-        self.net = None
+        self.net = pdx.load_model(self.model_path)
         self.msgqueue = Queue() if maxqsize ==0 else Queue(maxsize=maxqsize) 
             
     def _receive_msgs(self, hostname="192.168.31.100", port=6500, is_req_rep=True, timeout=10**5):
@@ -72,15 +72,17 @@ class DETECT():
         return images
     
     def batch_detect_and_send(self, remote_addr, port, is_req_rep=True, maxsize=50):
-        self.net = pdx.load_model(self.model_path)
-        
+
         sender = imagezmq.ImageSender(f"tcp://{remote_addr}:{port}")
         
         send_count = 0
         while True:
+            t1 = time.time()
             image_list = self.acquire_msgs(maxsize=maxsize)
-            image_list_copy = [i.copy().astype('float32') for i in image_list]
-            image_results = self.net.predict(image_list_copy)
+            t2 = time.time()
+            image_results = self.net.predict(map(lambda x:x.copy().astype("float32"), image_list)) 
+            #[i.copy().astype('float32') for i in image_list])
+            print(f"inference {len(image_list)}: {time.time() - t2:,.2f}", end="  ")
         
             for image, result in zip(image_list, image_results):
                 boxes, labels = self.filter_bboxes(result)
@@ -88,10 +90,10 @@ class DETECT():
                 send_msg(sender, image, msg=new_msg, image_quality=90, image_type="buffer", is_req_rep=is_req_rep)
 
                 send_count += 1
-                os.system("clear")
-                print(f"prev step image cached: {self.msgqueue.qsize():,} | image sent: {send_count:,}")
+#                 os.system("clear")
+#                 print(f"prev step image cached: {self.msgqueue.qsize():,} | image sent: {send_count:,}")
             
-
+            print(f"all: {time.time() - t1:,.2f}")
 
 
     
