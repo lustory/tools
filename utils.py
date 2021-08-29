@@ -63,20 +63,7 @@ COLORS = {"body":"lime", "head":"red"}
 
 
 
-def putText(img,text,org,textSize,color):
-    '''
-        org: (x,y)
-    '''
-    img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
-    draw = ImageDraw.Draw(img)
-
-    # 字体的格式
-    fontStyle = ImageFont.truetype("SimHei.ttf", textSize, encoding="utf-8")
-    # 绘制文本
-    draw.text(org, text, color, font=fontStyle)
-    # 转换回OpenCV格式
-    return cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR)
 
 
 

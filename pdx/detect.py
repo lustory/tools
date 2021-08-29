@@ -22,7 +22,7 @@ from comm.ImageZMQ.utils import send_msg
 NONE_DETECTED = -1
 
 class DETECT():
-    def __init__(self, model_path="./inference_model", use_gpu=False, inputWdith=512, inputHeight=512, confThre=0.5, maxqsize=1000):
+    def __init__(self, model_path="./inference_model", use_gpu=False, inputWdith=512, inputHeight=512, confThre=0.5, maxqsize=0):
         self.confThre = confThre
         self.model_path = model_path
         self.use_gpu = use_gpu
@@ -60,7 +60,7 @@ class DETECT():
         boxes, labels = self.filter_bboxes(det_results)
         return boxes, labels
     
-    def acquire_msgs(self, maxsize=5):
+    def acquire_msgs(self, maxsize=50):
     
         if 1 <= self.msgqueue.qsize() <= maxsize:
             images =  [self.msgqueue.get() for i in range(self.msgqueue.qsize())]
@@ -71,7 +71,7 @@ class DETECT():
         
         return images
     
-    def batch_detect_and_send(self, remote_addr, port, is_req_rep=True, maxsize=5):
+    def batch_detect_and_send(self, remote_addr, port, is_req_rep=True, maxsize=50):
         self.net = pdx.load_model(self.model_path)
         
         sender = imagezmq.ImageSender(f"tcp://{remote_addr}:{port}")
@@ -89,7 +89,7 @@ class DETECT():
 
                 send_count += 1
                 os.system("clear")
-                print(f"image cached: {self.msgqueue.qsize():,} | image sent: {send_count:,}")
+                print(f"prev step image cached: {self.msgqueue.qsize():,} | image sent: {send_count:,}")
             
 
 

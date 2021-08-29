@@ -48,7 +48,7 @@ class webCamVideoStream:
                 self.stream_init()      
                 
             self.skip_frame()
-            if self.im_w != None: 
+            if (self.im_w != None) and (self.im_w < self.frame.shape[1]):
                 self.frame = imutils.resize(self.frame, width = self.im_w)
             self.imagedeque.put(self.frame)
                          
@@ -65,7 +65,7 @@ class webCamVideoStream:
         
         if not self.grabbed:
             print(f"[INFO] webcam reconnectinig ")
-            while retry:
+            while True:
                 self.stream = cv2.VideoCapture(self.video_addr)
                 self.grabbed, self.frame = self.stream.read()
                 if not self.grabbed:

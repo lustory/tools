@@ -33,11 +33,11 @@ receive_port = 6500
 send_port = 6501
 REQ_REP = True
 hostname = "127.0.0.1" 
-model_path = "/home/xjtu/.research/models/test_model"
+model_path = "/home/xjtu/.research/models/zhongyangbiandiansuo"
 
 
-detector = DETECT(model_path=model_path, inputWdith=544, inputHeight=544, confThre=0.5)
+detector = DETECT(model_path=model_path, inputWdith=544, inputHeight=544, confThre=0.5, maxqsize=0)
 
 detector.start_receive(hostname=hostname, port=receive_port, is_req_rep=REQ_REP)
 
-detector.batch_detect_and_send(remote_addr=hostname, port=send_port)
+detector.batch_detect_and_send(remote_addr=hostname, port=send_port, maxsize=20)

@@ -21,19 +21,21 @@ from video.webCameraVideoStream import webCamVideoStream
 port = 6500
 is_req_rep = True
 remote_addr = "127.0.0.1" 
-input_stream = "/home/xjtu/.research/test.mp4"
+input_stream = "/home/xjtu/.research/data/zhongyangbiandiansuo_02.mp4"
+# input_stream = "/home/xjtu/.research/test.mp4"
 sender = imagezmq.ImageSender(f"tcp://{remote_addr}:{port}")
 print(f"[INFO] starting sending msgs using {'req_rep' if is_req_rep else 'pub_sub'} mode")
 
 
-webcam = webCamVideoStream(input_stream, skip_num=3, maxqsize=0, im_w=None)
+webcam = webCamVideoStream(input_stream, skip_num=8, maxqsize=0, im_w=640)
 webcam.start()
 
 count = 0
 while True:
     image = webcam.read()
     send_msg(sender, image, image_quality=70)
-    time.sleep(0.05)
+    time.sleep(0.02)
     os.system("clear")
     count += 1
     print(f"{socket.gethostname()} sent frames: {count:,}")
+print(f"{count:,} sent, finished")

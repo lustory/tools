@@ -173,3 +173,22 @@ def plot_hollow_box(draw, box, line_ratio=0.3, color="springgreen", line_width=3
     draw.line((x2,y2, x2-x_extend, y2), color, width=line_width) 
     draw.line((x2,y2, x2, y2-y_extend), color, width=line_width)      
     
+def put_text(img, text, org, textSize, color, fillColor=(241,147,156), outline=None, width=1):
+    '''
+        org: (x,y)
+    '''
+    img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+
+    draw = ImageDraw.Draw(img)
+
+    # font style
+    fontStyle = ImageFont.truetype("/home/xjtu/.research/tools/SimHei.ttf", textSize, encoding="utf-8")
+    
+    # drw the bg of text
+    (x1, y1) = org
+    (x2, y2) = x1+len(text)*textSize, y1+textSize
+    draw.rectangle(((x1, y1),(x2, y2)), fill=fillColor, outline=outline, width=width)  
+    # draw text
+    draw.text(org, text, fill=color, font=fontStyle)
+    
+    return cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR)

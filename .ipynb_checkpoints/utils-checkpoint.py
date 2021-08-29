@@ -59,42 +59,11 @@ COLORS = {"body":"lime", "head":"red"}
 # #             cv2.putText(image, label, (x1, y1), 0, lt / 3, [225, 255, 255], thickness=ft, lineType=cv2.LINE_AA)
         
     
-def plot_hollow_box(draw, box, line_ratio=0.3, color="springgreen", line_width=3):
-    '''
-        基于PIL.draw，画出空心box,
-        draw: ImageDraw.ImageDraw
-        box: [x1,y1,x2,y2]
-        line_ratio：实际画出box的长和宽占原本长和宽的比例。
-        color: box颜色
-        line_width: 线段宽度（像素）        
-    '''
-    # 矩形框参数计算
-    [x1,y1,x2,y2] = box
-    box_height, box_width = y2-y1, x2-x1
-    x_extend, y_extend = int(box_width*line_ratio), int(box_height*line_ratio)
-    
-    draw.line((x1,y1, x1+x_extend, y1), color, width=line_width) 
-    draw.line((x1,y1, x1, y1+y_extend), color, width=line_width) 
-    draw.line((x1,y2, x1+x_extend, y2), color, width=line_width) 
-    draw.line((x1,y2, x1, y2-y_extend), color, width=line_width) 
-    draw.line((x2,y1, x2-x_extend, y1), color, width=line_width) 
-    draw.line((x2,y1, x2, y1+y_extend), color, width=line_width) 
-    draw.line((x2,y2, x2-x_extend, y2), color, width=line_width) 
-    draw.line((x2,y2, x2, y2-y_extend), color, width=line_width)      
-    
-
-def xywh2xyxy(box):
-    if isinstance(box[0], int):
-        x,y,w,h = box
-        return [x,y,x+w,y+h]
-    else:
-        temp = []
-        for [x,y,w,h] in box:
-            temp.append([x,y,x+w,y+h])
-        return temp
 
 
-def putText(img,text,org,textSize,color):
+
+
+def put_text(img, text, org, textSize, color):
     '''
         org: (x,y)
     '''
@@ -103,7 +72,7 @@ def putText(img,text,org,textSize,color):
     draw = ImageDraw.Draw(img)
 
     # 字体的格式
-    fontStyle = ImageFont.truetype("SimHei.ttf", textSize, encoding="utf-8")
+    fontStyle = ImageFont.truetype("/home/xjtu/.research/tools/SimHei.ttf", textSize, encoding="utf-8")
     # 绘制文本
     draw.text(org, text, color, font=fontStyle)
     # 转换回OpenCV格式
