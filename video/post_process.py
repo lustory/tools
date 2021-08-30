@@ -4,9 +4,7 @@ import os
 import cv2
 import time
 import numpy as np
-import paddlex as pdx
 from imutils import resize as im_resize
-# from configParser import Config as config
 import simplejpeg
 import imagezmq
 import socket
@@ -18,7 +16,7 @@ from threading import Thread, Event
 import orjson
 from comm.ImageZMQ.utils import send_msg
 from .image_utils import *
-from collections import Counter,deque
+from collections import Counter, deque
 from .push_stream import PUSH_STREAM
 
 

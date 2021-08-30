@@ -3,8 +3,6 @@ import PIL
 from PIL import Image
 from io import BytesIO
 import simplejpeg
-from IPython import display
-import ipywidgets as widgets
 import cv2
 import datetime
 from PIL import Image, ImageDraw, ImageFont
@@ -14,6 +12,8 @@ import itertools
 import pathlib2 as pathlib
 import time
 import functools
+import ipywidgets as widgets
+from IPython import display
 
 
 def jcam_show(cam, height=300, width=400):

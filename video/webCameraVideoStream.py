@@ -78,7 +78,7 @@ class webCamVideoStream:
                 self.stream = cv2.VideoCapture(self.video_addr)
                 self.grabbed, self.frame = self.stream.read()
                 if not self.grabbed:
-                    time.sleep(1)
+                    time.sleep(2)
                     retry -= 1
                     assert retry >= 0, print("The input video stream is not available...")
                 else:
