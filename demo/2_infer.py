@@ -33,10 +33,10 @@ receive_port = 6500
 send_port = 6501
 REQ_REP = True
 hostname = "127.0.0.1" 
-model_path = "/home/xjtu/.research/models/zhongyangbiandiansuo"
+model_path = "/home/xjtu/.research/models/zybds_general_20210830"
 
 
-detector = DETECT(model_path=model_path, confThre=0.60, maxqsize=0)
+detector = DETECT(model_path=model_path, confThre=0.6, maxqsize=0)
 
 detector.start_receive(hostname=hostname, port=receive_port, is_req_rep=REQ_REP)
 

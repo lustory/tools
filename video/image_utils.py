@@ -139,6 +139,12 @@ def plot_one_box(image, box, label=None, line_width=3, box_color="lime", text_co
     return cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2BGR)
 
 
+def plot_polygon_on_image(image, pointset, fill="red", outline="blue"):
+    image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    draw = ImageDraw.ImageDraw(image)
+    
+    draw.polygon(pointset, fill=fill, outline=outline) 
+    return cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2BGR)
 
 def xywh2xyxy(box):
     if isinstance(box[0], int):

@@ -81,7 +81,7 @@ class DETECT():
             image_list = self.acquire_msgs(maxsize=maxsize)
             t2 = time.time()
             image_results = self.net.predict(map(lambda x:x.copy().astype("float32"), image_list)) 
-            #[i.copy().astype('float32') for i in image_list])
+            os.system("clear")
             print(f"inference {len(image_list)}: {time.time() - t2:,.2f}", end="  ")
         
             for image, result in zip(image_list, image_results):
@@ -90,8 +90,8 @@ class DETECT():
                 send_msg(sender, image, msg=new_msg, image_quality=90, image_type="buffer", is_req_rep=is_req_rep)
 
                 send_count += 1
-#                 os.system("clear")
-#                 print(f"prev step image cached: {self.msgqueue.qsize():,} | image sent: {send_count:,}")
+                
+                print(f"prev step image cached: {self.msgqueue.qsize():,} | image sent: {send_count:,}")
             
             print(f"all: {time.time() - t1:,.2f}")
 
