@@ -20,7 +20,7 @@ class PUSH_STREAM:
             fps: 视频帧率
         '''
         # rtmp 推流地址
-        rtmp_url = f"rtmp://{self.ip}:{self.port}/stream/{self.stream_name}"
+        rtmp_url = f"rtmp://{self.ip}:{self.port}/live/{self.stream_name}"
             
         # ffmpeg命令
         command = ['ffmpeg',

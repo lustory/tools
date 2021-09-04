@@ -36,4 +36,4 @@ port=6501
 PP = POST_PROCESS()
 PP.start_receive(hostname, port)
 
-PP.push_stream(ip="localhost", port=1935, stream_name="yuan_1haoshebei", poolsize=5)
+PP.push_stream(ip="localhost", port=1935, stream_name="zhongyangbiandiansuo_1", poolsize=5)

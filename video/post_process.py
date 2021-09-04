@@ -81,15 +81,14 @@ class POST_PROCESS:
     
 
     
-    def push_stream(self, ip="localhost", port=1935, stream_name="test1", poolsize=5):
+    def push_stream(self, ip="localhost", port=1935, stream_name="test1", decision_poolsize=5):
         
         temp = 0
 
-        ry_list, dkm_list = deque(maxlen=poolsize), deque(maxlen=poolsize)
+        ry_list, dkm_list = deque(maxlen=decision_poolsize), deque(maxlen=decision_poolsize)
         while True:
             info = self.msgqueue.get()
             if temp ==0:
-                print(self.im_w, self.im_h)
                 PS = PUSH_STREAM(ip=ip, port=port, stream_name=stream_name, image_width=self.im_w, image_height=self.im_h, fps=4)
                 PS.start_prush_rtmp_stream()
                 temp = -1
