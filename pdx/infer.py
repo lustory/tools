@@ -16,7 +16,7 @@ import functools
 from threading import Thread, Event
 import orjson
 from comm.ImageZMQ.utils import send_msg
-from .piner_utils import *
+from .pinfer_utils import *
 
 
 class DETECT():
@@ -30,7 +30,7 @@ class DETECT():
         
         self.confThre = confThre
         self.label_dict=label_dict
-        self.net = self.pinfer_init_predictor(model_dir=model_path, \
+        self.net = pinfer_init_predictor(model_dir=model_path, \
                                               gpu_mem=gpu_mem, \
                                               gpu_id=gpu_id, \
                                               use_gpu=use_gpu)
