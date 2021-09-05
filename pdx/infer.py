@@ -6,7 +6,6 @@ import time
 import numpy as np
 import paddlex as pdx
 from imutils import resize as im_resize
-# from configParser import Config as config
 import simplejpeg
 import imagezmq
 import socket
@@ -17,16 +16,25 @@ import functools
 from threading import Thread, Event
 import orjson
 from comm.ImageZMQ.utils import send_msg
+from .piner_utils import *
 
-
-NONE_DETECTED = -1
 
 class DETECT():
-    def __init__(self, model_path="./inference_model", use_gpu=False, confThre=0.5, maxqsize=0):
+    def __init__(self, model_path="./inference_model", \
+                 use_gpu=False, \
+                 gpu_mem=100, \
+                 gpu_id=0, \
+                 confThre=0.5, \
+                 label_dict={1:"cat", 2:"dog"},\
+                 maxqsize=0):
+        
         self.confThre = confThre
-        self.model_path = model_path
-        self.use_gpu = use_gpu
-        self.net = pdx.load_model(self.model_path)
+        self.label_dict=label_dict
+        self.net = self.pinfer_init_predictor(model_dir=model_path, \
+                                              gpu_mem=gpu_mem, \
+                                              gpu_id=gpu_id, \
+                                              use_gpu=use_gpu)
+        
         self.msgqueue = Queue() if maxqsize ==0 else Queue(maxsize=maxqsize) 
             
     def _receive_msgs(self, hostname="192.168.31.100", port=6500, is_req_rep=True, timeout=10**5):
@@ -43,20 +51,25 @@ class DETECT():
             self.msgqueue.put(image)
             
     def start_receive(self, hostname, port, is_req_rep=True):
-        receive_msg = functools.partial(self._receive_msgs, hostname=hostname, port=port, is_req_rep=is_req_rep)
+        receive_msg = functools.partial(self._receive_msgs,\
+                                        hostname=hostname, \
+                                        port=port, \
+                                        is_req_rep=is_req_rep)
         Thread(target=receive_msg, args=()).start()
     
-    def filter_bboxes(self, det_results):
-        boxes_and_labels = [ [self.round_list(res['bbox']), res['category']]  \
-                             for res in det_results if res['score'] >= self.confThre ]
+    def filter_bboxes(self, det_results, label_dict):
+        # cat_id, score, bbox
+        boxes_and_labels = [[res[0], res[2:]] for res in det_results if res[1] >= self.confThre]
+
         boxes, labels = [], []
         for box, label in boxes_and_labels:
+            label = self.label_dict[int(label)]
             boxes.append(box), labels.append(label)
         return boxes, labels
     
     def detect(self, image):
-
-        det_results = self.net.predict(image.copy().astype('float32')) 
+        det_results = pinfer_run(self.net, image)
+        
         boxes, labels = self.filter_bboxes(det_results)
         return boxes, labels
     
