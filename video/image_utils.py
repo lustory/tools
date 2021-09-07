@@ -16,8 +16,15 @@ import ipywidgets as widgets
 from IPython import display
 
 
-def jcam_show(cam, height=300, width=400):
-    imgbox = widgets.Image(format='jpg', height=height, width=width)
+def jcam_show(cam, height=None, width=None):
+    if height == None and width != None:
+        imgbox = widgets.Image(format='jpg', width=width)
+    elif height != None and width == None:
+        imgbox = widgets.Image(format='jpg', height=height)
+    elif height != None and width != None:
+        imgbox = widgets.Image(format='jpg', height=height, width=width)
+    else:
+        imgbox = widgets.Image(format='jpg')
     display.display(imgbox)
     cam.start()
     while True:
@@ -139,11 +146,14 @@ def plot_one_box(image, box, label=None, line_width=3, box_color="lime", text_co
     return cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2BGR)
 
 
-def plot_polygon_on_image(image, pointset, fill="red", outline="blue"):
+def plot_roi_on_image(image, pointset, fill="red", outline="blue"):
+    if isinstance(pointset[0], tuple):
+        pointset=[pointset]
+        
     image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
     draw = ImageDraw.ImageDraw(image)
-    
-    draw.polygon(pointset, fill=fill, outline=outline) 
+    for pset in pointset:
+        draw.polygon(pset, fill=fill, outline=outline) 
     return cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2BGR)
 
 def xywh2xyxy(box):

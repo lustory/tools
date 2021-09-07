@@ -1,4 +1,3 @@
-
 #coding:utf-8
 import os
 import cv2
@@ -6,45 +5,45 @@ import time
 import numpy as np
 import paddlex as pdx
 from imutils import resize as im_resize
-# from configParser import Config as config
 import simplejpeg
 import imagezmq
 import socket
 import itertools
 from multiprocessing import Queue
-from comm.ImageZMQ.VideoStreamSubscriber import VideoStreamSubscriber
+from comm.ImageZMQ import VideoStreamSubscriber
 import functools
 from threading import Thread, Event
 import orjson
-from comm.ImageZMQ.utils import send_msg
+from comm.ImageZMQ import msgSender
 
 
 NONE_DETECTED = -1
 
 class DETECT():
-    def __init__(self, model_path="./inference_model", use_gpu=False, confThre=0.5, maxqsize=0):
+    def __init__(self, model_path="./inference_model", use_gpu=False, confThre=0.5, msgCachedSize=0):
         self.confThre = confThre
         self.model_path = model_path
         self.use_gpu = use_gpu
         self.net = pdx.load_model(self.model_path)
-        self.msgqueue = Queue() if maxqsize ==0 else Queue(maxsize=maxqsize) 
+        self.msgqueue = Queue() if msgCachedSize ==0 else Queue(maxsize=msgCachedSize) 
             
-    def _receive_msgs(self, hostname="192.168.31.100", port=6500, is_req_rep=True, timeout=10**5):
+    def _receive_msgs(self, hostname="192.168.31.100", port=6500, req_rep=True, timeout=10**5):
 
         # dtype=image 表示接受numpy格式的image, buffer表示接收jpeg buffer
-        receiver = VideoStreamSubscriber(hostname, port, is_req_rep=is_req_rep) 
-        print(f"[INFO] start receiving msgs in {'REQ_REP' if is_req_rep else 'pub_sub'} mode ...")
+        receiver = VideoStreamSubscriber(hostname, port, req_rep=req_rep) 
+        print(f"[INFO] using {'REQ_REP' if req_rep else 'pub_sub'} mode ...")
 
         while True:
-            _, jpg_buffer = receiver.receive(timeout=timeout)
+            msg, jpg_buffer = receiver.receive(timeout=timeout)
             image = simplejpeg.decode_jpeg(jpg_buffer, colorspace='BGR', fastdct=False, fastupsample=False)
-
-            # input_queue.put({"msg":msg, "image":image})
-            self.msgqueue.put(image)
+            self.msgqueue.put({"msg":msg, "image":image})
             
-    def start_receive(self, hostname, port, is_req_rep=True):
-        receive_msg = functools.partial(self._receive_msgs, hostname=hostname, port=port, is_req_rep=is_req_rep)
-        Thread(target=receive_msg, args=()).start()
+    def start_receive(self, hostname, port, req_rep=True):
+        if isinstance(port,list):
+            for i in port:
+                Thread(target=self._receive_msgs, args=(hostname, i, req_rep)).start()
+        else:
+            Thread(target=self._receive_msgs, args=(hostname, port, req_rep)).start()
     
     def filter_bboxes(self, det_results):
         boxes_and_labels = [ [self.round_list(res['bbox']), res['category']]  \
@@ -55,44 +54,47 @@ class DETECT():
         return boxes, labels
     
     def detect(self, image):
-
         det_results = self.net.predict(image.copy().astype('float32')) 
         boxes, labels = self.filter_bboxes(det_results)
         return boxes, labels
     
-    def acquire_msgs(self, maxsize=50):
+    def acquire_msgs(self, maxBatchSize=50):
     
-        if 1 <= self.msgqueue.qsize() <= maxsize:
-            images =  [self.msgqueue.get() for i in range(self.msgqueue.qsize())]
-        elif self.msgqueue.qsize() > maxsize:
-            images =  [self.msgqueue.get() for i in range(maxsize)]
+        if 1 <= self.msgqueue.qsize() <= maxBatchSize:
+            msgs =  [self.msgqueue.get() for i in range(self.msgqueue.qsize())]
+        elif self.msgqueue.qsize() > maxBatchSize:
+            msgs =  [self.msgqueue.get() for i in range(maxBatchSize)]
         else:
-            images =  [self.msgqueue.get()]
+            msgs =  [self.msgqueue.get()]
         
-        return images
+        msg_list, image_list = [], []
+        for msg in msgs:
+            msg_list.append(msg["msg"])
+            image_list.append(msg["image"])
+        return msg_list, image_list
     
-    def batch_detect_and_send(self, remote_addr, port, is_req_rep=True, maxsize=50):
-
-        sender = imagezmq.ImageSender(f"tcp://{remote_addr}:{port}")
+    def batch_detect_and_send(self, remote_addr, port, req_rep=True, maxBatchSize=50):
+        
+        Sender = msgSender(remote_addr, port, image_type="buffer", req_rep=req_rep)
         
         send_count = 0
         while True:
-            t1 = time.time()
-            image_list = self.acquire_msgs(maxsize=maxsize)
-            t2 = time.time()
+#             t1 = time.time()
+            msg_list, image_list = self.acquire_msgs(maxBatchSize=maxBatchSize)
+            
             image_results = self.net.predict(map(lambda x:x.copy().astype("float32"), image_list)) 
+            
             os.system("clear")
-#             print(f"inference {len(image_list)}: {time.time() - t2:,.2f}", end="  ")
-        
-            for image, result in zip(image_list, image_results):
+            for msg, image, result in zip(msg_list, image_list, image_results):
+#                 t2 = time.time()
                 boxes, labels = self.filter_bboxes(result)
-                new_msg = {"boxes":boxes, "labels":labels}
-                send_msg(sender, image, msg=new_msg, image_quality=90, image_type="buffer", is_req_rep=is_req_rep)
+                new_msg = {"msg":msg, "boxes":boxes, "labels":labels}
+                Sender.send(image, msg=new_msg, image_quality=90)
 
                 send_count += 1
                 
-                print(f"prev step image cached: {self.msgqueue.qsize():,} | image sent: {send_count:,}")
-            
+                print(f"pending: {self.msgqueue.qsize():,} | sent: {send_count:,}")
+#                 print(time.time() -t2)
 #             print(f"all: {time.time() - t1:,.2f}")
 
 

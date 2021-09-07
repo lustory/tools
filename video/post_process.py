@@ -14,7 +14,6 @@ from comm.ImageZMQ.VideoStreamSubscriber import VideoStreamSubscriber
 import functools
 from threading import Thread, Event
 import orjson
-from comm.ImageZMQ.utils import send_msg
 from .image_utils import *
 from collections import Counter, deque
 from .push_stream import PUSH_STREAM
@@ -22,29 +21,31 @@ from .push_stream import PUSH_STREAM
 
 LABELS = ["RY_RY", "PD_DKM"]
 class POST_PROCESS:
-    def __init__(self, maxqsize=1000):
+    def __init__(self, maxqsize=100, roi_points=[]):
         self.msgqueue = Queue() if maxqsize==0 else Queue(maxsize=maxqsize) 
         self.im_w = None
         self.im_h = None
-        self.polygon_01 = [(int(362/903*640), int(313/508*360)),(int(595/903*640), int(313/508*360)),
-                          (int(781/903*640), int(498/508*360)) , (int(238/903*640), int(498/508*360))]
+        self.roi = roi_points # [ [x,y], [x,y]]
+#        
     
-    def _receive_msg(self, hostname, port, is_req_rep=True, timeout=10**5):
+    def _receive_msg(self, hostname, port, req_rep=True, token="", timeout=10**5):
         
-        receiver = VideoStreamSubscriber(hostname, port, is_req_rep=is_req_rep) 
-        print(f"[INFO] start receiving msgs in {'REQ_REP' if is_req_rep else 'pub_sub'} mode ...")
+        receiver = VideoStreamSubscriber(hostname, port, req_rep=req_rep) 
+        print(f"[INFO] using {'REQ_REP' if req_rep else 'pub_sub'} mode ...")
         
         temp = 0
         while True:
             msg, jpg_buffer = receiver.receive(timeout=timeout)
+            if msg["msg"] != token:
+                continue
             image = simplejpeg.decode_jpeg(jpg_buffer, colorspace='BGR', fastdct=False, fastupsample=False)
             if temp == 0:
                 self.im_h, self.im_w = image.shape[:2]
                 temp = -1
             self.msgqueue.put({"msg":msg, "image":image})
             
-    def start_receive(self, hostname, port, is_req_rep=True):
-        receive_msg = functools.partial(self._receive_msg, hostname=hostname, port=port, is_req_rep=is_req_rep)
+    def start_receive(self, hostname, port, req_rep=True, token="token"):
+        receive_msg = functools.partial(self._receive_msg, hostname=hostname, port=port, req_rep=req_rep, token=token)
         Thread(target=receive_msg, args=()).start()
         
     def imshow_with_logic_decision(self, show_type="jupyter", poolsize=5):
@@ -106,6 +107,6 @@ class POST_PROCESS:
                     image = put_text(image, "人员进入", org=org, textSize=textSize, color="white", fillColor=(241,147,156))
 
             image = plot_boxes_on_image(image, boxes, labels)
-            image = plot_polygon_on_image(image, self.polygon_01, fill=None, outline="blue")
+            image = plot_roi_on_image(image, self.roi, fill=None, outline="yellow")
 
             PS.image_write(image)

@@ -10,9 +10,9 @@ from multiprocessing import Queue
 import copy
 import imutils
 
- 
+
 class webCamVideoStream:
-    def __init__(self, video_addr, skip_num=3, retry=10, maxqsize=30, im_w=None, quality=None,  name="webCamera"):
+    def __init__(self, video_addr, skip_num=3, retry=10, maxqsize=30):
         '''
             video_addr: 输入视频流地址
             skip_num: 跳帧数量
@@ -20,10 +20,7 @@ class webCamVideoStream:
             maxqsize: 最大的缓存帧数量，0表示无限大。maxqsize所起作用是
                       在源头防止因下游处理阻塞导致的帧积压问题，帧积压又会进一步
                       造成下游的图片流延迟。建议该参数设定后保持默认即可。
-                      但当下游读帧受其他程序阻塞时，
-            im_w: 图像宽度，保持长宽比缩放
-            quality: 图片质量。
-            name: 进程名
+                      但当下游读帧受其他程序阻塞时.
         '''
         
         self.video_addr = video_addr
@@ -31,53 +28,33 @@ class webCamVideoStream:
         self.retry = retry
         self.stream_init()
         self.readin_cycle_loop = cycle(list(range(skip_num+1)))
-        self.name = name
-        self.stopped = False
         self.imagedeque = Queue() if maxqsize ==0 else Queue(maxsize=maxqsize) 
-        self.im_w = im_w
-        self.quality = quality
  
     def start(self):
-        t = Thread(target=self.update, name=self.name, args=())
+        t = Thread(target=self.update, name="thread_name", args=())
         t.daemon = True
         t.start()
         return self
     
     def update(self):
         while True:
-            if self.stopped:
-                return 
-            self.grabbed, self.frame = self.stream.read()
-            if not self.grabbed: 
-                self.stream_init()     
+            self.ret = self.stream.grab()
+            if not self.ret:
+                self.stream_init()
+            if next(self.readin_cycle_loop) == 0:
+                self.ret, self.frame = self.stream.retrieve()
+                self.imagedeque.put(self.frame)
                 
-            if self.quality != None:
-                self.frame = self.image_compress(self.frame, self.quality)
-                
-            if (self.im_w != None) and (self.im_w < self.frame.shape[1]):
-                self.frame = imutils.resize(self.frame, width = self.im_w)
-                
-            self.imagedeque.put(self.frame)
-            
-            self.skip_frame()
-                         
-    def skip_frame(self):
-        while True:
-            if next(self.readin_cycle_loop) != 0:
-                self.stream.grab()
-            else:
-                break
-            
     def stream_init(self):
-        self.grabbed, self.frame = self.stream.read()
+        self.ret = self.stream.grab()
         retry = self.retry
         
-        if not self.grabbed:
+        if not self.ret:
             print(f"[INFO] webcam reconnectinig ")
             while True:
                 self.stream = cv2.VideoCapture(self.video_addr)
-                self.grabbed, self.frame = self.stream.read()
-                if not self.grabbed:
+                self.ret = self.stream.grab()
+                if not self.ret:
                     time.sleep(2)
                     retry -= 1
                     assert retry >= 0, print("The input video stream is not available...")
@@ -94,6 +71,13 @@ class webCamVideoStream:
         
     def read(self):
         return self.imagedeque.get()
+    
+#     def nouse():
+#         if self.quality != None:
+#             self.frame = self.image_compress(self.frame, self.quality)
+
+#         if (self.im_w != None) and (self.im_w < self.frame.shape[1]):
+#             self.frame = imutils.resize(self.frame, width = self.im_w)
 
     
     
