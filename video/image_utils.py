@@ -208,3 +208,45 @@ def put_text(img, text, org, textSize, color, fillColor=(241,147,156), outline=N
     draw.text(org, text, fill=color, font=fontStyle)
     
     return cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR)
+
+
+
+def point_in_polygn(point, pointset):
+    """
+        point: (x,y)
+        pointset:[(x,y), (x,y)]
+    """
+    if point == ():
+        return "unknow"
+    
+    if isinstance(pointset[0], tuple):
+        pointset = [pointset]
+    
+    flag_list = []
+    for pset in pointset:
+        pset = np.asarray(pset)
+        print(pset)
+        # -1: outside, 0 on the edge, 1: inside.
+        flag_list.append(cv2.pointPolygonTest(pset, point, False))
+    
+    if 1 in flag_list or 0 in flag_list:
+        return "in"
+    else:
+        return "out"
+    
+    
+def centerpoint_of_boxes(boxes):
+    '''
+        boxes: [[x,y,w,h],[x,y,w,h]]
+    '''
+    if boxes == []:
+        return [()]
+    else:
+        boxes = [xywh2xyxy(i) for i in boxes]
+        boxes = np.asarray(boxes).reshape(-1, 4)
+        x_mean = (boxes[:,0] + boxes[:,2])//2
+        y_mean = (boxes[:,1] + boxes[:,3])//2
+        
+        return [(x,y) for x, y in zip(x_mean, y_mean)]
+        
+        

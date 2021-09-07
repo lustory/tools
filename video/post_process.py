@@ -26,23 +26,24 @@ class POST_PROCESS:
         self.im_w = None
         self.im_h = None
         self.roi = roi_points # [ [x,y], [x,y]]
-#        
+        self.has_image_info = False    
     
     def _receive_msg(self, hostname, port, req_rep=True, token="", timeout=10**5):
         
         receiver = VideoStreamSubscriber(hostname, port, req_rep=req_rep) 
         print(f"[INFO] using {'REQ_REP' if req_rep else 'pub_sub'} mode ...")
         
-        temp = 0
         while True:
             msg, jpg_buffer = receiver.receive(timeout=timeout)
             if msg["msg"] != token:
                 continue
             image = simplejpeg.decode_jpeg(jpg_buffer, colorspace='BGR', fastdct=False, fastupsample=False)
-            if temp == 0:
-                self.im_h, self.im_w = image.shape[:2]
-                temp = -1
+
             self.msgqueue.put({"msg":msg, "image":image})
+            
+            if not self.has_image_info:
+                self.im_h, self.im_w = image.shape[:2]
+                self.has_image_info = True
             
     def start_receive(self, hostname, port, req_rep=True, token="token"):
         receive_msg = functools.partial(self._receive_msg, hostname=hostname, port=port, req_rep=req_rep, token=token)
@@ -85,15 +86,23 @@ class POST_PROCESS:
     def push_stream(self, ip="localhost", port=1935, stream_name="test1", decision_poolsize=5):
         
         temp = 0
-
         ry_list, dkm_list = deque(maxlen=decision_poolsize), deque(maxlen=decision_poolsize)
         while True:
+            
             info = self.msgqueue.get()
-            if temp ==0:
-                PS = PUSH_STREAM(ip=ip, port=port, stream_name=stream_name, image_width=self.im_w, image_height=self.im_h, fps=4)
+            if temp == 0:
+                PS = PUSH_STREAM(ip=ip, port=port, stream_name=stream_name, \
+                                     image_width=self.im_w, image_height=self.im_h, fps=4)
                 PS.start_prush_rtmp_stream()
                 temp = -1
+                
+                
+                
+            
             boxes, labels, image = info["msg"]["boxes"], info["msg"]["labels"], info["image"]
+            boxes_centers = centerpoint_of_boxes(boxes)
+            
+            
             
             # main logic
             ry_list.appendleft(1) if "RY" in "".join(labels) else ry_list.appendleft(0) 
