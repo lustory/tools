@@ -21,12 +21,13 @@ from .push_stream import PUSH_STREAM
 
 LABELS = ["RY_RY", "PD_DKM"]
 class POST_PROCESS:
-    def __init__(self, maxqsize=100, roi_points=[]):
+    def __init__(self, maxqsize=100, roi_points=[], token=None):
         self.msgqueue = Queue() if maxqsize==0 else Queue(maxsize=maxqsize) 
         self.im_w = None
         self.im_h = None
         self.roi = roi_points # [ [x,y], [x,y]]
         self.has_image_info = False    
+        self.token=token
     
     def _receive_msg(self, hostname, port, req_rep=True, token="", timeout=10**5):
         
@@ -87,6 +88,7 @@ class POST_PROCESS:
         
         temp = 0
         ry_list, dkm_list = deque(maxlen=decision_poolsize), deque(maxlen=decision_poolsize)
+        jinru_list = deque(maxlen=decision_poolsize)
         while True:
             
             info = self.msgqueue.get()
@@ -102,20 +104,30 @@ class POST_PROCESS:
             boxes, labels, image = info["msg"]["boxes"], info["msg"]["labels"], info["image"]
             boxes_centers = centerpoint_of_boxes(boxes)
             
-            
-            
-            # main logic
-            ry_list.appendleft(1) if "RY" in "".join(labels) else ry_list.appendleft(0) 
-            dkm_list.appendleft(1) if "DKM" in "".join(labels) else dkm_list.appendleft(0) 
+            if self.token !="jjj":
+                is_in = points_in_polygons(boxes_centers, self.roi)
+
+
+
+                # main logic
+                ry_list.appendleft(1) if "RY" in "".join(labels) else ry_list.appendleft(0) 
+                dkm_list.appendleft(1) if "DKM" in "".join(labels) else dkm_list.appendleft(0) 
+                jinru_list.appendleft(1) if is_in == "in" else jinru_list.appendleft(0)
             
             # when reached the maxlen, the do the rest logic.
-            if len(ry_list) >= ry_list.maxlen:
-                if (sum(ry_list)/ry_list.maxlen) >= 0.6:
-                    textSize = int(image.shape[0]/20)
-                    org = (textSize*1, image.shape[0] - 1*textSize)
-                    image = put_text(image, "人员进入", org=org, textSize=textSize, color="white", fillColor=(241,147,156))
-
+#             if len(ry_list) >= ry_list.maxlen:
+#                 if (sum(ry_list)/ry_list.maxlen) >= 0.6:
+#                     textSize = int(image.shape[0]/20)
+#                     org = (textSize*1, image.shape[0] - 1*textSize)
+#                     image = put_text(image, "人员进入", org=org, textSize=textSize, color="white", fillColor=(241,147,156))
+                if len(jinru_list) >= jinru_list.maxlen:
+                    if (sum(jinru_list)/jinru_list.maxlen)>=0.6:
+                        textSize = int(image.shape[0]/20)
+                        org = (textSize*1, image.shape[0] - 1*textSize)
+                        image = put_text(image, "禁区闯入", org=org, textSize=textSize, color="white", fillColor=(241,147,156))
+            image = plot_roi_on_image(image, self.roi, fill=None, outline="red")
+        
             image = plot_boxes_on_image(image, boxes, labels)
-            image = plot_roi_on_image(image, self.roi, fill=None, outline="yellow")
+            
 
             PS.image_write(image)

@@ -211,13 +211,15 @@ def put_text(img, text, org, textSize, color, fillColor=(241,147,156), outline=N
 
 
 
-def point_in_polygn(point, pointset):
+def point_in_polygon(point, pointset):
     """
         point: (x,y)
         pointset:[(x,y), (x,y)]
     """
     if point == ():
         return "unknow"
+    if isinstance(point, list):
+            point = tuple(point)
     
     if isinstance(pointset[0], tuple):
         pointset = [pointset]
@@ -225,7 +227,9 @@ def point_in_polygn(point, pointset):
     flag_list = []
     for pset in pointset:
         pset = np.asarray(pset)
-        print(pset)
+        print("pset", pset, type(pset))
+        print("point",point,type(point), type(point[0]), type(point[1]))
+        point = (int(point[0]), int(point[1]))
         # -1: outside, 0 on the edge, 1: inside.
         flag_list.append(cv2.pointPolygonTest(pset, point, False))
     
@@ -249,4 +253,16 @@ def centerpoint_of_boxes(boxes):
         
         return [(x,y) for x, y in zip(x_mean, y_mean)]
         
-        
+def points_in_polygons(points, pointsets):
+    '''
+        points: [(x,y),(x,y)]
+        pointset:[(x,y), (x,y)]
+    '''
+#     print("pts", points)
+    for point in points:
+#         print(point)
+        ret = point_in_polygon(point, pointsets)
+        if ret == "in":
+            return "in"
+    return "out"
+    
